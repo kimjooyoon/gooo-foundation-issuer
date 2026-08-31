@@ -92,8 +92,8 @@ jobs:
           go build -o "$RUNNER_TEMP/gooo-consumer" ./cmd/gooo-foundation-consumer
           "$RUNNER_TEMP/gooo-issuer" -request "$RUNNER_TEMP/authorization-request.json" -rotation "$RUNNER_TEMP/rotation-input.json" -out "$RUNNER_TEMP/evidence"
           cp keys/foundation-issuer-ed25519.pub "$RUNNER_TEMP/evidence/public-key.pub"
-          "$RUNNER_TEMP/gooo-consumer" -receipt "$RUNNER_TEMP/evidence/signed-receipt.json" -rotation "$RUNNER_TEMP/rotation-input.json" -public-key keys/foundation-issuer-ed25519.pub -out "$RUNNER_TEMP/evidence/consumer"
-          jq -e '.signature_valid and .tuple_exact and .rotation_exact and .decision == "UNKNOWN"' "$RUNNER_TEMP/evidence/consumer/independent-consumer-report.json"
+          "$RUNNER_TEMP/gooo-consumer" -receipt "$RUNNER_TEMP/evidence/signed-receipt.json" -rotation "$RUNNER_TEMP/rotation-input.json" -public-key keys/foundation-issuer-ed25519.pub -policy semantic/foundation-issuer.gooo -out "$RUNNER_TEMP/evidence/consumer"
+          jq -e '.signature_valid and .tuple_exact and .rotation_exact and .decision == "UNKNOWN" and .inventory_root_readme_excluded and .inventory_physical_lines_excluded and .inventory_other_readmes_retained' "$RUNNER_TEMP/evidence/consumer/independent-consumer-report.json"
       - name: Prepare signed evidence release assets
         if: ${{ inputs.publish_release }}
         env:

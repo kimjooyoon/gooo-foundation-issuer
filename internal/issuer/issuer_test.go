@@ -88,3 +88,17 @@ func TestStatePrecedenceAndRefutation(t *testing.T) {
 		t.Fatalf("tampered receipt must be REFUTED: %+v", report)
 	}
 }
+
+func TestInventoryAuthorityConsumesRootReadmeRule(t *testing.T) {
+	path := t.TempDir() + "/policy.gooo"
+	if err := os.WriteFile(path, []byte("graph foundation-issuer version=0.1.0\n"+inventoryAuthorityLine+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	authority, err := ReadInventoryAuthority(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !authority.RootReadmeExcluded || !authority.PhysicalLinesExcluded || !authority.OtherReadmesRetained {
+		t.Fatalf("unexpected inventory authority: %+v", authority)
+	}
+}

@@ -15,7 +15,37 @@ func main() {
 	rotationPath := flag.String("rotation", "", "immutable rotation input JSON")
 	publicKeyPath := flag.String("public-key", "", "raw base64 public key")
 	outDir := flag.String("out", "", "consumer output directory")
+	policyPath := flag.String("policy", "", "semantic inventory policy")
+	inventoryOnly := flag.Bool("inventory-only", false, "consume only the inventory authority")
 	flag.Parse()
+	if *inventoryOnly {
+		if *policyPath == "" || *outDir == "" {
+			fatal("policy and out are required for inventory-only mode")
+		}
+		if err := os.MkdirAll(*outDir, 0o700); err != nil {
+			fatal("create output directory: %v", err)
+		}
+		authority, err := issuer.ReadInventoryAuthority(*policyPath)
+		if err != nil {
+			fatal("read inventory authority: %v", err)
+		}
+		report := issuer.VerificationReport{
+			Schema:                         "gooo/foundation-authorization/inventory-consumer-report/v1",
+			Decision:                       issuer.Closed,
+			InventoryRootReadmeExcluded:    authority.RootReadmeExcluded,
+			InventoryPhysicalLinesExcluded: authority.PhysicalLinesExcluded,
+			InventoryOtherReadmesRetained:  authority.OtherReadmesRetained,
+			InventoryPolicyDigest:          authority.PolicyDigest,
+			Reason:                         "consumer consumed .gooo root README inventory authority",
+			Stage:                          "COHERENCE",
+			Step:                           "inventory-authority",
+		}
+		if err := issuer.WriteJSON(filepath.Join(*outDir, "inventory-consumer-report.json"), report); err != nil {
+			fatal("write inventory consumer report: %v", err)
+		}
+		fmt.Printf("inventory root_readme_excluded=%t physical_lines_excluded=%t other_readmes_retained=%t\n", authority.RootReadmeExcluded, authority.PhysicalLinesExcluded, authority.OtherReadmesRetained)
+		return
+	}
 	if *receiptPath == "" || *rotationPath == "" || *publicKeyPath == "" || *outDir == "" {
 		fatal("receipt, rotation, public-key, and out are required")
 	}
@@ -39,6 +69,16 @@ func main() {
 	}
 	receipt.PublicKey = string(keyBytes)
 	report := issuer.VerifyReceipt(receipt, rotation, time.Now())
+	if *policyPath != "" {
+		authority, err := issuer.ReadInventoryAuthority(*policyPath)
+		if err != nil {
+			fatal("read inventory authority: %v", err)
+		}
+		report.InventoryRootReadmeExcluded = authority.RootReadmeExcluded
+		report.InventoryPhysicalLinesExcluded = authority.PhysicalLinesExcluded
+		report.InventoryOtherReadmesRetained = authority.OtherReadmesRetained
+		report.InventoryPolicyDigest = authority.PolicyDigest
+	}
 	if err := issuer.WriteJSON(filepath.Join(*outDir, "independent-consumer-report.json"), report); err != nil {
 		fatal("write consumer report: %v", err)
 	}
