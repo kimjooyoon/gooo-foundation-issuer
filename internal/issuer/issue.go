@@ -3,6 +3,7 @@ package issuer
 import (
 	"crypto/ed25519"
 	"fmt"
+	"reflect"
 	"time"
 )
 
@@ -84,7 +85,7 @@ func VerifyReceipt(receipt Receipt, rotation RotationInput, now time.Time) Verif
 		return report
 	}
 	report.TupleExact = true
-	if err := ValidateRotation(rotation); err != nil || rotation != receipt.Payload.Rotation {
+	if err := ValidateRotation(rotation); err != nil || !reflect.DeepEqual(rotation, receipt.Payload.Rotation) {
 		report.Reason = "rotation input mismatch"
 		return report
 	}
