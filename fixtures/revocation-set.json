@@ -1,0 +1,6 @@
+{
+  "schema": "gooo/foundation-authorization/revocation-set/v1",
+  "revoked_public_keys": [],
+  "revoked_receipt_digests": [],
+  "replay_policy": "same receipt digest or nonce is REFUTED on second use"
+}

@@ -1,0 +1,12 @@
+{
+  "repository": "kimjooyoon/gooo-foundation-rotation",
+  "version": "v0.1.2",
+  "release_id": 380045288,
+  "immutable": true,
+  "tag_object_sha": "cc311eb5b14f54b5e467f9402c6f7a32e9b5b3dc",
+  "target_commit": "5534a6814fdd9c8c6ddd957d5c26fd5c15258e02",
+  "assets": [
+    {"id": 538516119, "name": "gooo-foundation-rotation-evidence-v0.1.2.tar.gz", "size_bytes": 4767, "sha256": "sha256:d259722c20cb3e525575d4bfb1488424ab4d23eed964fe68334345711635fe6d"},
+    {"id": 538516120, "name": "gooo-foundation-rotation-linux-amd64", "size_bytes": 4604245, "sha256": "sha256:82bd491f106abbe729242bcb0bb8b5a47d8dd5d9ceaa35be73722e4fc90d6b36"}
+  ]
+}

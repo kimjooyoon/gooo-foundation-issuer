@@ -1,0 +1,128 @@
+name: Issue Foundation authorization
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        required: true
+        type: string
+      pull_request:
+        required: true
+        type: number
+      base_ref:
+        required: true
+        type: string
+      base_sha:
+        required: true
+        type: string
+      head_ref:
+        required: true
+        type: string
+      head_sha:
+        required: true
+        type: string
+      candidate_digest:
+        required: true
+        type: string
+      rotation_tag:
+        required: true
+        default: v0.1.2
+        type: string
+      release_tag:
+        required: true
+        default: v0.1.0
+        type: string
+      publish_release:
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  issue:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.0'
+          cache: true
+      - name: Observe OIDC claims and immutable rotation input
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUDIENCE: gooo-foundation-issuer
+          ROTATION_TAG: ${{ inputs.rotation_tag }}
+        run: |
+          set -euo pipefail
+          oidc_response=$(curl -fsSL -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=${AUDIENCE}")
+          jq -r .value <<< "$oidc_response" > "$RUNNER_TEMP/oidc-token"
+          gh api "repos/kimjooyoon/gooo-foundation-rotation/releases/tags/${ROTATION_TAG}" > "$RUNNER_TEMP/rotation-release.json"
+          tag_ref=$(gh api "repos/kimjooyoon/gooo-foundation-rotation/git/ref/tags/${ROTATION_TAG}")
+          tag_object=$(jq -r .object.sha <<< "$tag_ref")
+          tag_data=$(gh api "repos/kimjooyoon/gooo-foundation-rotation/git/tags/${tag_object}")
+          target=$(jq -r .object.sha <<< "$tag_data")
+          jq -n --slurpfile release "$RUNNER_TEMP/rotation-release.json" --arg tag_object "$tag_object" --arg target "$target" '{repository:"kimjooyoon/gooo-foundation-rotation",version:$release[0].tag_name,release_id:$release[0].id,immutable:$release[0].immutable,tag_object_sha:$tag_object,target_commit:$target,assets:[$release[0].assets[]|{id:.id,name:.name,size_bytes:.size,sha256:.digest}]}' > "$RUNNER_TEMP/rotation-input.json"
+          jq -e '.immutable == true and .version == "v0.1.2" and (.assets|length) == 2 and all(.assets[]; .sha256|startswith("sha256:"))' "$RUNNER_TEMP/rotation-input.json"
+      - name: Build exact #619 request
+        env:
+          INPUT_REPOSITORY: ${{ inputs.repository }}
+          INPUT_PULL_REQUEST: ${{ inputs.pull_request }}
+          INPUT_BASE_REF: ${{ inputs.base_ref }}
+          INPUT_BASE_SHA: ${{ inputs.base_sha }}
+          INPUT_HEAD_REF: ${{ inputs.head_ref }}
+          INPUT_HEAD_SHA: ${{ inputs.head_sha }}
+          INPUT_CANDIDATE_DIGEST: ${{ inputs.candidate_digest }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          jq -n --arg repository "$INPUT_REPOSITORY" --argjson pull_request "$INPUT_PULL_REQUEST" --arg base_ref "$INPUT_BASE_REF" --arg base_sha "$INPUT_BASE_SHA" --arg head_ref "$INPUT_HEAD_REF" --arg head_sha "$INPUT_HEAD_SHA" --arg candidate_digest "$INPUT_CANDIDATE_DIGEST" --arg actor "$ACTOR" --arg nonce "run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" '{schema:"gooo/foundation-authorization/request/v1",repository:$repository,pull_request:$pull_request,base_ref:$base_ref,base_sha:$base_sha,head_ref:$head_ref,head_sha:$head_sha,candidate_digest:$candidate_digest,changed_paths:[".github/agent-scope-table.md",".github/ci-governance.json",".github/workflows/meta-policy-compilation.yml",".github/workflows/transformation-effect.yml","cmd/meta-policy-compilation-consumer/main.go","cmd/meta-policy-compilation-witness/main.go","docs/language/meta-policy-compilation.md","examples/language-syntax-roundtrip/corpus.json","examples/meta-policy-compilation/README.md","examples/meta-policy-compilation/cases.json","examples/meta-policy-compilation/policy.gooo","internal/meta/languagereadiness/languagesyntax/conformance/evaluate_test.go","internal/meta/languagereadiness/languagesyntax/model.go","internal/meta/languagereadiness/languagesyntax/registry.go","internal/meta/policycompilation/compile.go","internal/meta/policycompilation/constants.go","internal/meta/policycompilation/digest.go","internal/meta/policycompilation/evaluate.go","internal/meta/policycompilation/judge.go","internal/meta/policycompilation/model.go","internal/meta/policycompilation/policycompilation_test.go","internal/meta/policycompilation/receipt.go","internal/meta/policycompilation/verify.go","internal/verify/scope_meta_policy_compilation_semantic_authority_20260901.go"],protected_scope:[".github/agent-scope-table.md",".github/ci-governance.json",".github/workflows/meta-policy-compilation.yml",".github/workflows/transformation-effect.yml","internal/verify/scope_meta_policy_compilation_semantic_authority_20260901.go"],protected_scope_digest:"sha256:3e09937e0e48ec2fcf4c6c605ae5937756648b4532a1735e5d4cd6b9c04e44fb",actor_identity:$actor,issuer_identity:"github.com/kimjooyoon/gooo-foundation-issuer",nonce:$nonce,external_human_independence:"UNKNOWN"}' > "$RUNNER_TEMP/authorization-request.json"
+      - name: Issue, verify, and consume receipt
+        env:
+          FOUNDATION_ISSUER_PRIVATE_KEY: ${{ secrets.FOUNDATION_ISSUER_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          export ACTIONS_ID_TOKEN="$(<"$RUNNER_TEMP/oidc-token")"
+          go build -o "$RUNNER_TEMP/gooo-issuer" ./cmd/gooo-foundation-issuer
+          go build -o "$RUNNER_TEMP/gooo-consumer" ./cmd/gooo-foundation-consumer
+          "$RUNNER_TEMP/gooo-issuer" -request "$RUNNER_TEMP/authorization-request.json" -rotation "$RUNNER_TEMP/rotation-input.json" -out "$RUNNER_TEMP/evidence"
+          cp keys/foundation-issuer-ed25519.pub "$RUNNER_TEMP/evidence/public-key.pub"
+          "$RUNNER_TEMP/gooo-consumer" -receipt "$RUNNER_TEMP/evidence/signed-receipt.json" -rotation "$RUNNER_TEMP/rotation-input.json" -public-key keys/foundation-issuer-ed25519.pub -out "$RUNNER_TEMP/evidence/consumer"
+          jq -e '.signature_valid and .tuple_exact and .rotation_exact and .decision == "UNKNOWN"' "$RUNNER_TEMP/evidence/consumer/independent-consumer-report.json"
+      - name: Prepare signed evidence release assets
+        if: ${{ inputs.publish_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/gooo-foundation-issuer-evidence-${RELEASE_TAG}.tar.gz"
+          binary="$RUNNER_TEMP/gooo-foundation-issuer-linux-amd64"
+          go build -trimpath -o "$binary" ./cmd/gooo-foundation-issuer
+          cp "$RUNNER_TEMP/authorization-request.json" "$RUNNER_TEMP/evidence/authorization-request.json"
+          cp "$RUNNER_TEMP/rotation-input.json" "$RUNNER_TEMP/evidence/rotation-input.json"
+          cp semantic/foundation-issuer.gooo "$RUNNER_TEMP/evidence/foundation-issuer.gooo"
+          tar -czf "$evidence" -C "$RUNNER_TEMP/evidence" .
+          commit=$(git rev-parse HEAD)
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "refusing to rewrite existing tag ${RELEASE_TAG}" >&2
+            exit 1
+          fi
+          tag_object=$(jq -n --arg tag "$RELEASE_TAG" --arg message "gooo-foundation-issuer ${RELEASE_TAG}" --arg object "$commit" '{tag:$tag,message:$message,object:$object,type:"commit"}' | gh api "repos/${GITHUB_REPOSITORY}/git/tags" -X POST --input - --jq .sha)
+          jq -n --arg ref "refs/tags/${RELEASE_TAG}" --arg sha "$tag_object" '{ref:$ref,sha:$sha}' | gh api "repos/${GITHUB_REPOSITORY}/git/refs" -X POST --input - >/dev/null
+          release_id=$(jq -n --arg tag "$RELEASE_TAG" --arg name "gooo-foundation-issuer ${RELEASE_TAG}" --arg body "Signed Foundation authorization evidence for exact PR #619 tuple." '{tag_name:$tag,name:$name,body:$body,draft:true,prerelease:false}' | gh api "repos/${GITHUB_REPOSITORY}/releases" -X POST --input - --jq .id)
+          gh release upload "$RELEASE_TAG" "$evidence" "$binary" --repo "$GITHUB_REPOSITORY"
+          jq -n '{draft:false}' | gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}" -X PATCH --input - >/dev/null
+          ./scripts/verify-durable-release.sh -tag "$RELEASE_TAG" -commit "$commit" -evidence "$evidence" -binary "$binary" -output "$RUNNER_TEMP/evidence/durable-release-verification.json"
+      - name: Upload issuer dossier
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundation-issuer-dossier-${{ github.run_id }}
+          path: ${{ runner.temp }}/evidence
+          if-no-files-found: error
+          retention-days: 30

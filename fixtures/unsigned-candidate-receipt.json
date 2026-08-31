@@ -1,0 +1,33 @@
+{
+  "schema": "gooo/foundation-authorization/issuer-receipt/v1",
+  "payload_type": "application/vnd.gooo.foundation-authorization+json;version=1",
+  "payload": {
+    "schema": "gooo/foundation-authorization/issuer-receipt/v1",
+    "repository": "kimjooyoon/meta-ontology-go",
+    "pull_request": 619,
+    "base_ref": "dev",
+    "base_sha": "ac3a56b933d9a9b934fe26709485dc2f36edd916",
+    "head_ref": "agent/meta-policy-compilation-semantic-authority-20260901",
+    "head_sha": "90f5fdf2198a7da5cde405f9f675cc62975b9226",
+    "candidate_digest": "sha256:0df9610f6300503ac39f18a9389695de33ac2b0edb3523a25fc4df77c0fa166e",
+    "protected_scope": [".github/agent-scope-table.md", ".github/ci-governance.json", ".github/workflows/meta-policy-compilation.yml", ".github/workflows/transformation-effect.yml", "internal/verify/scope_meta_policy_compilation_semantic_authority_20260901.go"],
+    "protected_scope_digest": "sha256:3e09937e0e48ec2fcf4c6c605ae5937756648b4532a1735e5d4cd6b9c04e44fb",
+    "actor_identity": "kimjooyoon",
+    "issuer_identity": "github.com/kimjooyoon/gooo-foundation-issuer",
+    "nonce": "fixture",
+    "issued_at": "2026-09-01T00:00:00Z",
+    "expires_at": "2026-09-01T00:15:00Z",
+    "generation": 1,
+    "prior_receipt_digest": "",
+    "decision": "UNKNOWN",
+    "issuance_state": "CLOSED",
+    "human_independence_state": "UNKNOWN",
+    "integration_state": "UNKNOWN",
+    "external_authority_claim": "OWNER_OPERATED_EXTERNAL_REPOSITORY_AUTHORITY_ONLY",
+    "rotation": {"repository": "kimjooyoon/gooo-foundation-rotation", "version": "v0.1.2", "release_id": 380045288, "immutable": true, "tag_object_sha": "cc311eb5b14f54b5e467f9402c6f7a32e9b5b3dc", "target_commit": "5534a6814fdd9c8c6ddd957d5c26fd5c15258e02", "assets": [{"id": 538516119, "name": "gooo-foundation-rotation-evidence-v0.1.2.tar.gz", "size_bytes": 4767, "sha256": "sha256:d259722c20cb3e525575d4bfb1488424ab4d23eed964fe68334345711635fe6d"}, {"id": 538516120, "name": "gooo-foundation-rotation-linux-amd64", "size_bytes": 4604245, "sha256": "sha256:82bd491f106abbe729242bcb0bb8b5a47d8dd5d9ceaa35be73722e4fc90d6b36"}]},
+    "oidc": {"iss": "https://token.actions.githubusercontent.com", "sub": "repo:kimjooyoon/gooo-foundation-issuer:ref:refs/heads/main", "aud": "gooo-foundation-issuer", "iat": 1, "exp": 2, "raw_observed": false, "signature_state": "UNKNOWN"}
+  },
+  "payload_digest": "",
+  "public_key": "",
+  "signature": ""
+}

@@ -1,0 +1,23 @@
+graph foundation-issuer version=0.1.0
+states CLOSED UNKNOWN REFUTED precedence=REFUTED>UNKNOWN>CLOSED
+axis FOUNDATION meaning=external-issuer-and-rotation-release
+axis COHERENCE meaning=exact-pr619-tuple-and-v0.1.2-input
+axis REGRESSION meaning=single-use-replay-revocation-and-authority-boundary
+cell 01 axis=FOUNDATION signal=issuer_unavailable state=UNKNOWN
+cell 02 axis=FOUNDATION signal=oidc_claims_unavailable state=UNKNOWN
+cell 03 axis=FOUNDATION signal=signature_invalid state=REFUTED
+cell 04 axis=FOUNDATION signal=immutable_rotation_satisfied state=CLOSED
+cell 05 axis=COHERENCE signal=pr619_tuple_mismatch state=REFUTED
+cell 06 axis=COHERENCE signal=rotation_input_mismatch state=REFUTED
+cell 07 axis=COHERENCE signal=payload_expired state=REFUTED
+cell 08 axis=COHERENCE signal=exact_tuple_and_input state=CLOSED
+cell 09 axis=REGRESSION signal=replay_detected state=REFUTED
+cell 10 axis=REGRESSION signal=revoked_key state=REFUTED
+cell 11 axis=REGRESSION signal=external_human_independence_unobserved state=UNKNOWN
+cell 12 axis=REGRESSION signal=guardian_consumer_contract_unavailable state=UNKNOWN
+transition candidate->issued on exact_tuple_and_input
+transition issued->consumed on first_use
+transition consumed->REFUTED on replay_detected
+transition any->REFUTED on signature_invalid
+transition any->UNKNOWN on external_human_independence_unobserved
+transition any->UNKNOWN on guardian_consumer_contract_unavailable
