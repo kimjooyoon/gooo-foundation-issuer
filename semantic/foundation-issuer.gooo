@@ -1,5 +1,6 @@
 graph foundation-issuer version=0.1.0
 states CLOSED UNKNOWN REFUTED precedence=REFUTED>UNKNOWN>CLOSED
+inventory root_readme=README.md files=excluded physical_lines=excluded other_readmes=retained
 axis FOUNDATION meaning=external-issuer-and-rotation-release
 axis COHERENCE meaning=exact-pr619-tuple-and-v0.1.2-input
 axis REGRESSION meaning=single-use-replay-revocation-and-authority-boundary

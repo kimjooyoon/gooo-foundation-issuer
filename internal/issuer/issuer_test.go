@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/json"
+	"os"
 	"testing"
 	"time"
 )
@@ -86,5 +87,19 @@ func TestStatePrecedenceAndRefutation(t *testing.T) {
 	report := VerifyReceipt(receipt, testRotation(), time.Date(2026, 9, 1, 0, 1, 0, 0, time.UTC))
 	if report.Decision != Refuted {
 		t.Fatalf("tampered receipt must be REFUTED: %+v", report)
+	}
+}
+
+func TestInventoryAuthorityConsumesRootReadmeRule(t *testing.T) {
+	path := t.TempDir() + "/policy.gooo"
+	if err := os.WriteFile(path, []byte("graph foundation-issuer version=0.1.0\n"+inventoryAuthorityLine+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	authority, err := ReadInventoryAuthority(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !authority.RootReadmeExcluded || !authority.PhysicalLinesExcluded || !authority.OtherReadmesRetained {
+		t.Fatalf("unexpected inventory authority: %+v", authority)
 	}
 }

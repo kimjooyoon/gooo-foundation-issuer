@@ -103,21 +103,25 @@ type Receipt struct {
 }
 
 type VerificationReport struct {
-	Schema                 string `json:"schema"`
-	Decision               State  `json:"decision"`
-	SignatureValid         bool   `json:"signature_valid"`
-	TupleExact             bool   `json:"tuple_exact"`
-	RotationExact          bool   `json:"rotation_exact"`
-	OIDCClaimsObserved     bool   `json:"oidc_claims_observed"`
-	OIDCSignatureState     State  `json:"oidc_signature_state"`
-	HumanIndependenceState State  `json:"human_independence_state"`
-	IntegrationState       State  `json:"integration_state"`
-	Reason                 string `json:"reason"`
-	Stage                  string `json:"stage"`
-	Step                   string `json:"step"`
-	UnknownClass           string `json:"unknown_class"`
-	NextOperation          string `json:"next_operation"`
-	BlockedBy              string `json:"blocked_by"`
+	Schema                         string `json:"schema"`
+	Decision                       State  `json:"decision"`
+	SignatureValid                 bool   `json:"signature_valid"`
+	TupleExact                     bool   `json:"tuple_exact"`
+	RotationExact                  bool   `json:"rotation_exact"`
+	OIDCClaimsObserved             bool   `json:"oidc_claims_observed"`
+	OIDCSignatureState             State  `json:"oidc_signature_state"`
+	HumanIndependenceState         State  `json:"human_independence_state"`
+	IntegrationState               State  `json:"integration_state"`
+	Reason                         string `json:"reason"`
+	Stage                          string `json:"stage"`
+	Step                           string `json:"step"`
+	UnknownClass                   string `json:"unknown_class"`
+	NextOperation                  string `json:"next_operation"`
+	BlockedBy                      string `json:"blocked_by"`
+	InventoryRootReadmeExcluded    bool   `json:"inventory_root_readme_excluded"`
+	InventoryPhysicalLinesExcluded bool   `json:"inventory_physical_lines_excluded"`
+	InventoryOtherReadmesRetained  bool   `json:"inventory_other_readmes_retained"`
+	InventoryPolicyDigest          string `json:"inventory_policy_digest"`
 }
 
 type ReplayEvidence struct {
@@ -128,6 +132,15 @@ type ReplayEvidence struct {
 	RevokedKeyUse State  `json:"revoked_key_use"`
 	Decision      State  `json:"decision"`
 	Reason        string `json:"reason"`
+}
+
+type InventoryAuthority struct {
+	Schema                string `json:"schema"`
+	RootReadmePath        string `json:"root_readme_path"`
+	RootReadmeExcluded    bool   `json:"root_readme_excluded"`
+	PhysicalLinesExcluded bool   `json:"physical_lines_excluded"`
+	OtherReadmesRetained  bool   `json:"other_readmes_retained"`
+	PolicyDigest          string `json:"policy_digest"`
 }
 
 func Combine(states ...State) State {
